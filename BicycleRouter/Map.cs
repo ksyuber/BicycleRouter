@@ -216,19 +216,24 @@ namespace BicycleRouter
         public List<Node> findPath(Node from, Node to)
         {
             SortedSet<string> closed = new SortedSet<string>();
-            SortedList<double, Node> opened = new SortedList<double, Node>();
+            List<Node> opened = new List<Node>();
             Dictionary<string, Node> cameFrom = new Dictionary<string, Node>();
             Dictionary<string, double> pathLength = new Dictionary<string, double>();
 
             bool isFound = false;
 
-            opened.Add(0, from);
+            opened.Add(from);
             pathLength[from.id] = 0;
 
             while (opened.Count > 0)
             {
-                Node current = opened.Values[0];
+                Node current = opened[0];
                 opened.RemoveAt(0);
+
+                if (closed.Contains(current.id))
+                {
+                    continue;
+                }
 
                 if (current == to)
                 {
@@ -236,14 +241,15 @@ namespace BicycleRouter
                     break;
                 }
 
+                closed.Add(current.id);
+
                 foreach (Node next in graph[current.id])
                 {
                     double nextPathLength = pathLength[current.id] + (current.coords - next.coords).Length;
                     if (!pathLength.ContainsKey(next.id) || nextPathLength < pathLength[next.id])
                     {
                         pathLength[next.id] = nextPathLength;
-                        double nextPriority = nextPathLength + (next.coords - to.coords).Length;
-                        opened.Add(nextPriority, next);
+                        opened.Add(next);
                         cameFrom[next.id] = current;
                     }
                 }

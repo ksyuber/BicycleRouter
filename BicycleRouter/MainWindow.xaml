@@ -1,0 +1,54 @@
+﻿<Window x:Class="BicycleRouter.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:BicycleRouter"
+        mc:Ignorable="d"
+        Title="BicycleRouter" Height="600" Width="800">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_Файл">
+                <MenuItem Header="_Открыть" Click="OpenMenuItem_Click"></MenuItem>
+                <MenuItem Header="_Выход" Click="ExitMenuItem_Click"></MenuItem>
+            </MenuItem>
+        </Menu>
+        <Canvas Name="MapView" Width="6000" Height="5000"
+                MouseDown="MapView_MouseDown" MouseUp="MapView_MouseUp" MouseMove="MapView_MouseMove" Background="Transparent">
+            <Canvas.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Отсюда" Name="FromHere" Click="FromHere_Click">
+                    </MenuItem>
+                    <MenuItem Header="Сюда" Name="ToHere" Click="ToHere_Click">
+                    </MenuItem>
+                </ContextMenu>
+            </Canvas.ContextMenu>
+            <Grid Name="MapViewGrid">
+                <Grid.RenderTransform>
+                    <TransformGroup>
+                        <TranslateTransform x:Name="MapViewTranslateTransform" X="-2500" Y="-2000">
+                        </TranslateTransform>
+                    </TransformGroup>
+                </Grid.RenderTransform>
+                <Ellipse Name="FromHereEllipse" Fill="Blue" Width="20" Height="20" Opacity="0.7" Visibility="Hidden">
+                    <Ellipse.RenderTransform>
+                        <TransformGroup>
+                            <TranslateTransform x:Name="FromHereTranslateTransform">
+                            </TranslateTransform>
+                        </TransformGroup>
+                    </Ellipse.RenderTransform>
+                </Ellipse>
+                <Ellipse Name="ToHereEllipse" Fill="Red" Width="20" Height="20" Opacity="0.7" Visibility="Hidden">
+                    <Ellipse.RenderTransform>
+                        <TransformGroup>
+                            <TranslateTransform x:Name="ToHereTranslateTransform">
+                            </TranslateTransform>
+                        </TransformGroup>
+                    </Ellipse.RenderTransform>
+                </Ellipse>
+                <Polyline Name="Path" Stroke="LimeGreen" StrokeThickness="5" Opacity="0.8" Visibility="Hidden">
+                </Polyline>
+            </Grid>
+        </Canvas>
+    </DockPanel>
+</Window>

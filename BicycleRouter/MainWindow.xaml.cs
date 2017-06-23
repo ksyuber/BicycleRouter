@@ -42,7 +42,7 @@ namespace BicycleRouter
             openFileDialog.Multiselect = false;
             if (openFileDialog.ShowDialog() == true)
             {
-                map = new Map(openFileDialog.FileName, MapView.Width, MapView.Height);
+                map = new Map(openFileDialog.FileName, 6000, 5000);
                 drawMap();
             }
         }
@@ -52,26 +52,38 @@ namespace BicycleRouter
             Polyline polyline = new Polyline();
             polyline.StrokeThickness = strokeThickness;
             polyline.Stroke = new SolidColorBrush(color);
-            
-            polyline.Opacity = 0.5;
+
+            polyline.Opacity = 1;
             foreach (Node node in path)
             {
                 polyline.Points.Add(node.coords);
             }
-            MapViewGrid.Children.Add(polyline);
+            MapView.Children.Add(polyline);
         }
 
         private void drawMap()
         {
             foreach (Way way in map.ways)
             {
-                if (way.bicycle)
+                if (way.surfaceType == Way.SurfaceType.Cycleway)
                 {
-                    drawPath(way.nodes, 3, Color.FromRgb(196, 128, 0));
+                    drawPath(way.nodes, 4, Colors.Goldenrod);
+                }
+                else if (way.surfaceType == Way.SurfaceType.Asphalt)
+                {
+                    drawPath(way.nodes, 3, Colors.LightSteelBlue);
+                }
+                else if (way.surfaceType == Way.SurfaceType.Unpaved)
+                {
+                    drawPath(way.nodes, 2, Colors.Tomato);
+                }
+                else if (way.surfaceType == Way.SurfaceType.Footway)
+                {
+                    drawPath(way.nodes, 2, Colors.LightPink);
                 }
                 else
                 {
-                    drawPath(way.nodes, 1, Color.FromRgb(0, 0, 0));
+                    drawPath(way.nodes, 1, Colors.Black);
                 }
             }
         }
@@ -88,7 +100,7 @@ namespace BicycleRouter
                 isTranslating = true;
             }
             lastMousePosition = e.GetPosition(this);
-            lastMapViewGridMousePosition = e.GetPosition(MapViewGrid);
+            lastMapViewGridMousePosition = e.GetPosition(MapView);
         }
 
         private void MapView_MouseUp(object sender, MouseButtonEventArgs e)
@@ -103,7 +115,7 @@ namespace BicycleRouter
         {
             if (isTranslating)
             {
-                Point mousePosition = e.GetPosition(MapView);
+                Point mousePosition = e.GetPosition(this);
 
                 var delta = mousePosition - lastMousePosition;
 
@@ -116,13 +128,42 @@ namespace BicycleRouter
 
         private void findPath()
         {
-            if (fromNode != null && toNode != null)
+            if (FromHereEllipse.IsVisible && ToHereEllipse.IsVisible)
             {
                 Path.Visibility = Visibility.Visible;
                 Path.Points.Clear();
-                foreach (Node node in map.findPath(fromNode, toNode))
+
+                Way.SurfaceType surfaceType = Way.SurfaceType.None;
+                if (AnySurface.IsChecked == true)
                 {
-                    Path.Points.Add(node.coords);
+                    surfaceType |= Way.SurfaceType.Unspecified;
+                }
+                if (UnpavedSurface.IsChecked == true)
+                {
+                    surfaceType |= Way.SurfaceType.Unpaved;
+                }
+                if (AsphaltSurface.IsChecked == true)
+                {
+                    surfaceType |= Way.SurfaceType.Asphalt;
+                }
+                if (PedestrianSurface.IsChecked == true)
+                {
+                    surfaceType |= Way.SurfaceType.Footway;
+                }
+                if (CyclewaySurface.IsChecked == true)
+                {
+                    surfaceType |= Way.SurfaceType.Cycleway;
+                }
+
+                try
+                {
+                    foreach (Node node in map.findPath(fromNode, toNode, surfaceType))
+                    {
+                        Path.Points.Add(node.coords);
+                    }
+                }
+                catch (Exception)
+                {
                 }
             }
         }
@@ -134,8 +175,8 @@ namespace BicycleRouter
                 fromNode = map.getNearestNode(lastMapViewGridMousePosition);
 
                 Point fromHerePosition = fromNode.coords;
-                fromHerePosition.X -= MapViewGrid.ActualWidth * 0.5;
-                fromHerePosition.Y -= MapViewGrid.ActualHeight * 0.5;
+                fromHerePosition.X -= MapView.ActualWidth * 0.5;
+                fromHerePosition.Y -= MapView.ActualHeight * 0.5;
 
                 FromHereTranslateTransform.X = fromHerePosition.X;
                 FromHereTranslateTransform.Y = fromHerePosition.Y;
@@ -155,8 +196,8 @@ namespace BicycleRouter
                 toNode = map.getNearestNode(lastMapViewGridMousePosition);
 
                 Point toHerePosition = toNode.coords;
-                toHerePosition.X -= MapViewGrid.ActualWidth * 0.5;
-                toHerePosition.Y -= MapViewGrid.ActualHeight * 0.5;
+                toHerePosition.X -= MapView.ActualWidth * 0.5;
+                toHerePosition.Y -= MapView.ActualHeight * 0.5;
 
                 ToHereTranslateTransform.X = toHerePosition.X;
                 ToHereTranslateTransform.Y = toHerePosition.Y;
@@ -167,6 +208,38 @@ namespace BicycleRouter
             catch (Exception)
             {
             }
+        }
+
+        private void Reset_Click(object sender, RoutedEventArgs e)
+        {
+            FromHereEllipse.Visibility = Visibility.Hidden;
+            ToHereEllipse.Visibility = Visibility.Hidden;
+            Path.Visibility = Visibility.Hidden;
+        }
+
+        private void AnySurface_Click(object sender, RoutedEventArgs e)
+        {
+            findPath();
+        }
+
+        private void AsphaltSurface_Click(object sender, RoutedEventArgs e)
+        {
+            findPath();
+        }
+
+        private void CyclewaySurface_Click(object sender, RoutedEventArgs e)
+        {
+            findPath();
+        }
+
+        private void UnpavedSurface_Click(object sender, RoutedEventArgs e)
+        {
+            findPath();
+        }
+
+        private void PedestrianSurface_Click(object sender, RoutedEventArgs e)
+        {
+            findPath();
         }
     }
 }

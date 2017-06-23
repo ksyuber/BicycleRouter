@@ -78,8 +78,18 @@ namespace BicycleRouter
 
     class Way
     {
+        public enum SurfaceType
+        {
+            None = 0,
+            Unspecified = 1,
+            Footway = 2,
+            Unpaved = 4,
+            Asphalt = 8,
+            Cycleway = 16
+        }
+
         public List<Node> nodes = new List<Node>();
-        public bool bicycle = false;
+        public SurfaceType surfaceType = SurfaceType.None;
     }
 
     class Map
@@ -89,6 +99,7 @@ namespace BicycleRouter
         public Dictionary<string, Node> highwayNodes = new Dictionary<string, Node>();
         public List<Way> ways = new List<Way>();
         public Dictionary<string, List<Node>> graph = new Dictionary<string, List<Node>>();
+        public Dictionary<string, Dictionary<string, Way.SurfaceType>> surfaceType = new Dictionary<string, Dictionary<string, Way.SurfaceType>>();
 
         private const int searchGridCellSize = 100;
         private Dictionary<int, Dictionary<int, List<Node>>> searchGrid = new Dictionary<int, Dictionary<int, List<Node>>>();
@@ -111,18 +122,44 @@ namespace BicycleRouter
             foreach (XmlNode node in xml.DocumentElement.SelectNodes("way[tag[@k='highway']]"))
             {
                 Way way = new Way();
+                var highwayNode = node.SelectSingleNode("tag[@k='highway']");
+                var footNode = node.SelectSingleNode("tag[@k='foot']");
+                var bicycleNode = node.SelectSingleNode("tag[@k='bicycle']");
+                var surfaceNode = node.SelectSingleNode("tag[@k='surface']");
+                string highway = highwayNode != null ? highwayNode.Attributes["v"].Value : "";
+                string foot = footNode != null ? footNode.Attributes["v"].Value : "";
+                string bicycle = bicycleNode != null ? bicycleNode.Attributes["v"].Value : "";
+                string surface = surfaceNode != null ? surfaceNode.Attributes["v"].Value : "";
+                if (highway == "cycleway" || bicycle == "yes" || bicycle == "designated")
+                {
+                    way.surfaceType = Way.SurfaceType.Cycleway;
+                }
+                else if (surface == "asphalt" || highway == "primary" || highway == "secondary" ||
+                    highway == "tertiary" || highway == "residential" || highway == "service")
+                {
+                    way.surfaceType = Way.SurfaceType.Asphalt;
+                }
+                else if (highway == "footway" || highway == "pedestrian" || highway == "residential" ||
+                    foot == "yes" || foot == "designated" || foot == "destination")
+                {
+                    way.surfaceType = Way.SurfaceType.Footway;
+                }
+                else if (surface == "gravel" || surface == "unpaved" || surface == "grass" ||
+                    surface == "ground" || surface == "paving_stones" || surface == "sand")
+                {
+                    way.surfaceType = Way.SurfaceType.Unpaved;
+                }
+                else
+                {
+                    way.surfaceType = Way.SurfaceType.Unspecified;
+                }
+
                 foreach (XmlNode subNode in node.SelectNodes("nd"))
                 {
                     Node wayNode = nodes[subNode.Attributes["ref"].Value];
                     way.nodes.Add(wayNode);
                     highwayNodes[wayNode.id] = wayNode;
                 }
-                var highway = node.SelectSingleNode("tag[@k='highway']");
-                var bicycle = node.SelectSingleNode("tag[@k='bicycle']");
-                way.bicycle = 
-                    highway != null && highway.Attributes["v"].Value == "cycleway" ||
-                    bicycle != null && (bicycle.Attributes["v"].Value == "yes" || 
-                                        bicycle.Attributes["v"].Value == "designated");
 
                 ways.Add(way);
             }
@@ -140,13 +177,20 @@ namespace BicycleRouter
                         graph[nodeId] = new List<Node>();
                     }
 
+                    if (!surfaceType.ContainsKey(nodeId))
+                    {
+                        surfaceType[nodeId] = new Dictionary<string, Way.SurfaceType>();
+                    }
+
                     if (i - 1 >= 0)
                     {
                         graph[nodeId].Add(way.nodes[i - 1]);
+                        surfaceType[nodeId][way.nodes[i - 1].id] = way.surfaceType;
                     }
                     if (i + 1 < way.nodes.Count)
                     {
                         graph[nodeId].Add(way.nodes[i + 1]);
+                        surfaceType[nodeId][way.nodes[i + 1].id] = way.surfaceType;
                     }
                 }
             }
@@ -200,7 +244,7 @@ namespace BicycleRouter
                 searchGrid[cellX].ContainsKey(cellY) &&
                 searchGrid[cellX][cellY].Count > 0)
             {
-                searchGrid[cellX][cellY].Sort(delegate(Node node1, Node node2)
+                searchGrid[cellX][cellY].Sort(delegate (Node node1, Node node2)
                 {
                     return (node1.coords - point).LengthSquared.CompareTo((node2.coords - point).LengthSquared);
                 });
@@ -213,7 +257,7 @@ namespace BicycleRouter
             }
         }
 
-        public List<Node> findPath(Node from, Node to)
+        public List<Node> findPath(Node from, Node to, Way.SurfaceType surfaceType)
         {
             List<Tuple<Node, double>> opened = new List<Tuple<Node, double>>();
             Dictionary<string, Node> cameFrom = new Dictionary<string, Node>();
@@ -236,7 +280,7 @@ namespace BicycleRouter
                     break;
                 }
 
-                foreach (Node next in graph[current.id])
+                foreach (Node next in graph[current.id].Where(x => (this.surfaceType[current.id][x.id] & surfaceType) != 0))
                 {
                     double nextPathLength = pathLength[current.id] + (current.coords - next.coords).Length;
                     if (!pathLength.ContainsKey(next.id) || nextPathLength < pathLength[next.id])

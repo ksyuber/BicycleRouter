@@ -6,49 +6,91 @@
         xmlns:local="clr-namespace:BicycleRouter"
         mc:Ignorable="d"
         Title="BicycleRouter" Height="600" Width="800">
-    <DockPanel>
-        <Menu DockPanel.Dock="Top">
+    <DockPanel LastChildFill="True">
+        <Menu DockPanel.Dock="Top" Panel.ZIndex="99">
             <MenuItem Header="_Файл">
-                <MenuItem Header="_Открыть" Click="OpenMenuItem_Click"></MenuItem>
-                <MenuItem Header="_Выход" Click="ExitMenuItem_Click"></MenuItem>
+                <MenuItem Header="_Открыть" Click="OpenMenuItem_Click"/>
+                <MenuItem Header="_Выход" Click="ExitMenuItem_Click"/>
             </MenuItem>
         </Menu>
-        <Canvas Name="MapView" Width="6000" Height="5000"
-                MouseDown="MapView_MouseDown" MouseUp="MapView_MouseUp" MouseMove="MapView_MouseMove" Background="Transparent">
-            <Canvas.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Отсюда" Name="FromHere" Click="FromHere_Click">
-                    </MenuItem>
-                    <MenuItem Header="Сюда" Name="ToHere" Click="ToHere_Click">
-                    </MenuItem>
-                </ContextMenu>
-            </Canvas.ContextMenu>
-            <Grid Name="MapViewGrid">
-                <Grid.RenderTransform>
-                    <TransformGroup>
-                        <TranslateTransform x:Name="MapViewTranslateTransform" X="-2500" Y="-2000">
-                        </TranslateTransform>
-                    </TransformGroup>
-                </Grid.RenderTransform>
-                <Ellipse Name="FromHereEllipse" Fill="Blue" Width="20" Height="20" Opacity="0.7" Visibility="Hidden">
-                    <Ellipse.RenderTransform>
+        <DockPanel LastChildFill="True">
+            <StackPanel DockPanel.Dock="Right" Width="0" Name="ControlPanel" Panel.ZIndex="98" Opacity="1" Background="DarkGray">
+                <StackPanel.Style>
+                    <Style>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Path=IsVisible, ElementName=Path}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation
+                                                Storyboard.TargetProperty="Width" From="0" To="300"
+                                                AccelerationRatio="1"
+                                                Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation
+                                                Storyboard.TargetProperty="Width" From="300" To="0"
+                                                AccelerationRatio="1"
+                                                Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+                <ToggleButton Padding="5" Name="AnySurface" Click="AnySurface_Click" IsChecked="True">
+                    Неуказанный тип дороги
+                </ToggleButton>
+                <ToggleButton Padding="5" Name="PedestrianSurface" Click="PedestrianSurface_Click" IsChecked="True">
+                    Пешеходные дороги
+                </ToggleButton>
+                <ToggleButton Padding="5" Name="UnpavedSurface" Click="UnpavedSurface_Click" IsChecked="True">
+                    Грунтовые дороги
+                </ToggleButton>
+                <ToggleButton Padding="5" Name="AsphaltSurface" Click="AsphaltSurface_Click" IsChecked="True">
+                    Асфальтовые дороги
+                </ToggleButton>
+                <ToggleButton Padding="5" Name="CyclewaySurface" Click="CyclewaySurface_Click" IsChecked="True">
+                    Велодорожки
+                </ToggleButton>
+            </StackPanel>
+            <Canvas Background="Transparent"
+                MouseDown="MapView_MouseDown" MouseUp="MapView_MouseUp" MouseMove="MapView_MouseMove">
+                <Canvas.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Отсюда" Name="FromHere" Click="FromHere_Click"/>
+                        <MenuItem Header="Сюда" Name="ToHere" Click="ToHere_Click"/>
+                        <MenuItem Header="Сбросить маршрут" Name="Reset" Click="Reset_Click"/>
+                    </ContextMenu>
+                </Canvas.ContextMenu>
+                <Canvas Name="MapView">
+                    <Canvas.RenderTransform>
                         <TransformGroup>
-                            <TranslateTransform x:Name="FromHereTranslateTransform">
-                            </TranslateTransform>
+                            <TranslateTransform x:Name="MapViewTranslateTransform" X="-2500" Y="-2000"/>
                         </TransformGroup>
-                    </Ellipse.RenderTransform>
-                </Ellipse>
-                <Ellipse Name="ToHereEllipse" Fill="Red" Width="20" Height="20" Opacity="0.7" Visibility="Hidden">
-                    <Ellipse.RenderTransform>
-                        <TransformGroup>
-                            <TranslateTransform x:Name="ToHereTranslateTransform">
-                            </TranslateTransform>
-                        </TransformGroup>
-                    </Ellipse.RenderTransform>
-                </Ellipse>
-                <Polyline Name="Path" Stroke="LimeGreen" StrokeThickness="5" Opacity="0.8" Visibility="Hidden">
-                </Polyline>
-            </Grid>
-        </Canvas>
+                    </Canvas.RenderTransform>
+                    <Ellipse Name="FromHereEllipse" Fill="Blue" Width="16" Height="16" Margin="-8" Opacity="0.9" Visibility="Hidden" Panel.ZIndex="99">
+                        <Ellipse.RenderTransform>
+                            <TransformGroup>
+                                <TranslateTransform x:Name="FromHereTranslateTransform"/>
+                            </TransformGroup>
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+                    <Ellipse Name="ToHereEllipse" Fill="Red" Width="16" Height="16" Margin="-8" Opacity="0.9" Visibility="Hidden" Panel.ZIndex="99">
+                        <Ellipse.RenderTransform>
+                            <TransformGroup>
+                                <TranslateTransform x:Name="ToHereTranslateTransform"/>
+                            </TransformGroup>
+                        </Ellipse.RenderTransform>
+                    </Ellipse>
+                    <Polyline Name="Path" Stroke="LimeGreen" StrokeThickness="5" Opacity="1" Visibility="Hidden" Panel.ZIndex="98"/>
+                </Canvas>
+            </Canvas>
+        </DockPanel>
     </DockPanel>
 </Window>

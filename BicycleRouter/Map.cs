@@ -94,16 +94,31 @@ namespace BicycleRouter
 
     class Map
     {
+        // параметры проекции карты
         public MapProjectionParams projectionParams;
+
+        // список всех узлов карты
         public Dictionary<string, Node> nodes = new Dictionary<string, Node>();
+
+        // список узлов состоящих в путях
         public Dictionary<string, Node> highwayNodes = new Dictionary<string, Node>();
+        
+        // список путей
         public List<Way> ways = new List<Way>();
+
+        // граф путей, представлен в виде списка смежности
         public Dictionary<string, List<Node>> graph = new Dictionary<string, List<Node>>();
+
+        // тип покрытия ребер графа
         public Dictionary<string, Dictionary<string, Way.SurfaceType>> surfaceType = new Dictionary<string, Dictionary<string, Way.SurfaceType>>();
 
+        // размер сетки для быстрого поиска узлов
         private const int searchGridCellSize = 100;
+
+        // сетка для быстрого поиска ближашего узла
         private Dictionary<int, Dictionary<int, List<Node>>> searchGrid = new Dictionary<int, Dictionary<int, List<Node>>>();
 
+        // метод загрузки узлов
         private void loadNodes(XmlDocument xml)
         {
             foreach (XmlNode node in xml.DocumentElement.SelectNodes("node"))
@@ -117,6 +132,7 @@ namespace BicycleRouter
             }
         }
 
+        // метод загрузки путей
         private void loadWays(XmlDocument xml)
         {
             foreach (XmlNode node in xml.DocumentElement.SelectNodes("way[tag[@k='highway']]"))
@@ -165,6 +181,7 @@ namespace BicycleRouter
             }
         }
 
+        // метод построения графа путей
         private void fillGraph()
         {
             foreach (Way way in ways)
@@ -196,6 +213,7 @@ namespace BicycleRouter
             }
         }
 
+        // метод построения сетки для быстрого поиска ближайшего узла
         private void fillSearchGrid()
         {
             foreach (var node in highwayNodes)
@@ -235,6 +253,7 @@ namespace BicycleRouter
             fillSearchGrid();
         }
 
+        // метод поиска ближайшего узла при помощи регулярной сетки
         public Node getNearestNode(Point point)
         {
             int cellX = (int)(point.X / searchGridCellSize);
@@ -257,12 +276,17 @@ namespace BicycleRouter
             }
         }
 
+        // метод поиска кратчайшего пути с учетом фильтров дорог
         public List<Node> findPath(Node from, Node to, Way.SurfaceType surfaceType)
         {
+            // список вершин на рассмотрение
             List<Tuple<Node, double>> opened = new List<Tuple<Node, double>>();
+            // связь между узлами - из какого узла попали
             Dictionary<string, Node> cameFrom = new Dictionary<string, Node>();
+            // длина пути от начального узла
             Dictionary<string, double> pathLength = new Dictionary<string, double>();
 
+            // признак найденного пути
             bool isFound = false;
 
             opened.Add(Tuple.Create(from, 0.0));
@@ -270,21 +294,27 @@ namespace BicycleRouter
 
             while (opened.Count > 0)
             {
+                // берем из очереди на рассмотрение самый ближайший узел к конечному узлу
                 opened.Sort((x, y) => x.Item2.CompareTo(y.Item2));
                 Node current = opened[0].Item1;
                 opened.RemoveAt(0);
 
+                // если дошли до конечного узла то завершаем поиск пути
                 if (current == to)
                 {
                     isFound = true;
                     break;
                 }
 
+                // просматриваем все соседние узлы с учетом фильтра по типу дорог
                 foreach (Node next in graph[current.id].Where(x => (this.surfaceType[current.id][x.id] & surfaceType) != 0))
                 {
+                    // вычисляем новое расстояние от начального узла до следующего
                     double nextPathLength = pathLength[current.id] + (current.coords - next.coords).Length;
+                    // если новое расстояние лучше прежнего вычисленного
                     if (!pathLength.ContainsKey(next.id) || nextPathLength < pathLength[next.id])
                     {
+                        // запоминаем новое расстояние, добавляем узел на рассмотрение и запоминаем откуда пришли
                         pathLength[next.id] = nextPathLength;
                         opened.Add(Tuple.Create(next, nextPathLength + (next.coords - to.coords).Length));
                         cameFrom[next.id] = current;
@@ -292,11 +322,15 @@ namespace BicycleRouter
                 }
             }
 
+            // если путь найден, то необходимо восстановить найденный путь
             if (isFound)
             {
+                // список узлов найденного пути
                 List<Node> path = new List<Node>();
 
+                // начинаем с конечного узла, порядок узлов в пути будет обратным
                 Node current = to;
+                // пока не дошли до начального узла
                 while (current.id != from.id)
                 {
                     path.Add(current);
@@ -304,11 +338,13 @@ namespace BicycleRouter
                 }
                 path.Add(from);
 
+                // оборачиваем порядок узлов в пути, теперь порядок верный
                 path.Reverse();
 
                 return path;
             }
 
+            // если путь не найден, то выбрасываем исключение
             throw new ArgumentException("There is no way between the points");
         }
     }

@@ -78,18 +78,18 @@ namespace BicycleRouter
 
     class Way
     {
-        public enum SurfaceType
+        public enum WayType
         {
             None = 0,
             Unspecified = 1,
-            Footway = 2,
-            Unpaved = 4,
-            Asphalt = 8,
-            Cycleway = 16
+            PedestrianWay = 2,
+            DirtWay = 4,
+            CarWay = 8,
+            BicycleWay = 16
         }
 
         public List<Node> nodes = new List<Node>();
-        public SurfaceType surfaceType = SurfaceType.None;
+        public WayType surfaceType = WayType.None;
     }
 
     class Map
@@ -110,7 +110,7 @@ namespace BicycleRouter
         public Dictionary<string, List<Node>> graph = new Dictionary<string, List<Node>>();
 
         // тип покрытия ребер графа
-        public Dictionary<string, Dictionary<string, Way.SurfaceType>> surfaceType = new Dictionary<string, Dictionary<string, Way.SurfaceType>>();
+        public Dictionary<string, Dictionary<string, Way.WayType>> surfaceType = new Dictionary<string, Dictionary<string, Way.WayType>>();
 
         // размер сетки для быстрого поиска узлов
         private const int searchGridCellSize = 100;
@@ -135,6 +135,7 @@ namespace BicycleRouter
         // метод загрузки путей
         private void loadWays(XmlDocument xml)
         {
+            SortedSet<string> highwayTypes = new SortedSet<string>();
             foreach (XmlNode node in xml.DocumentElement.SelectNodes("way[tag[@k='highway']]"))
             {
                 Way way = new Way();
@@ -146,28 +147,37 @@ namespace BicycleRouter
                 string foot = footNode != null ? footNode.Attributes["v"].Value : "";
                 string bicycle = bicycleNode != null ? bicycleNode.Attributes["v"].Value : "";
                 string surface = surfaceNode != null ? surfaceNode.Attributes["v"].Value : "";
+                highwayTypes.Add(highway);
                 if (highway == "cycleway" || bicycle == "yes" || bicycle == "designated")
                 {
-                    way.surfaceType = Way.SurfaceType.Cycleway;
+                    way.surfaceType |= Way.WayType.BicycleWay;
                 }
-                else if (surface == "asphalt" || highway == "primary" || highway == "secondary" ||
-                    highway == "tertiary" || highway == "residential" || highway == "service")
+                if ((surface == "asphalt" || surface == "") &&
+                    (highway == "motorway" || highway == "primary" || highway == "primary_link" ||
+                    highway == "secondary" || highway == "secondary_link" ||
+                    highway == "tertiary" || highway == "tertiary_link" ||
+                    highway == "residential" || highway == "service" ||
+                    highway == "trunk" || highway == "trunk_link"))
                 {
-                    way.surfaceType = Way.SurfaceType.Asphalt;
+                    way.surfaceType |= Way.WayType.CarWay;
                 }
-                else if (highway == "footway" || highway == "pedestrian" || highway == "residential" ||
+                if (highway == "footway" || highway == "pedestrian" || highway == "residential" ||
+                    highway == "steps" || highway == "living_street" ||
+                    highway == "path" ||
                     foot == "yes" || foot == "designated" || foot == "destination")
                 {
-                    way.surfaceType = Way.SurfaceType.Footway;
+                    way.surfaceType |= Way.WayType.PedestrianWay;
                 }
-                else if (surface == "gravel" || surface == "unpaved" || surface == "grass" ||
-                    surface == "ground" || surface == "paving_stones" || surface == "sand")
+                if (surface == "gravel" || surface == "unpaved" || surface == "grass" ||
+                    surface == "ground" || surface == "paving_stones" || surface == "sand" ||
+                    highway == "living_street" || highway == "track" || highway == "path" ||
+                    highway == "bridleway")
                 {
-                    way.surfaceType = Way.SurfaceType.Unpaved;
+                    way.surfaceType |= Way.WayType.DirtWay;
                 }
-                else
+                if (highway == "unclassified" || highway == "yes")
                 {
-                    way.surfaceType = Way.SurfaceType.Unspecified;
+                    way.surfaceType |= Way.WayType.Unspecified;
                 }
 
                 foreach (XmlNode subNode in node.SelectNodes("nd"))
@@ -196,7 +206,7 @@ namespace BicycleRouter
 
                     if (!surfaceType.ContainsKey(nodeId))
                     {
-                        surfaceType[nodeId] = new Dictionary<string, Way.SurfaceType>();
+                        surfaceType[nodeId] = new Dictionary<string, Way.WayType>();
                     }
 
                     if (i - 1 >= 0)
@@ -277,7 +287,7 @@ namespace BicycleRouter
         }
 
         // метод поиска кратчайшего пути с учетом фильтров дорог
-        public List<Node> findPath(Node from, Node to, Way.SurfaceType surfaceType)
+        public List<Node> findPath(Node from, Node to, Way.WayType wayType)
         {
             // список вершин на рассмотрение
             List<Tuple<Node, double>> opened = new List<Tuple<Node, double>>();
@@ -307,7 +317,7 @@ namespace BicycleRouter
                 }
 
                 // просматриваем все соседние узлы с учетом фильтра по типу дорог
-                foreach (Node next in graph[current.id].Where(x => (this.surfaceType[current.id][x.id] & surfaceType) != 0))
+                foreach (Node next in graph[current.id].Where(x => (this.surfaceType[current.id][x.id] & wayType) != 0))
                 {
                     // вычисляем новое расстояние от начального узла до следующего
                     double nextPathLength = pathLength[current.id] + (current.coords - next.coords).Length;

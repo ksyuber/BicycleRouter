@@ -65,19 +65,19 @@ namespace BicycleRouter
         {
             foreach (Way way in map.ways)
             {
-                if (way.surfaceType == Way.SurfaceType.Cycleway)
+                if ((way.surfaceType & Way.WayType.BicycleWay) != 0)
                 {
                     drawPath(way.nodes, 4, Colors.Goldenrod);
                 }
-                else if (way.surfaceType == Way.SurfaceType.Asphalt)
+                else if ((way.surfaceType & Way.WayType.CarWay) != 0)
                 {
                     drawPath(way.nodes, 3, Colors.LightSteelBlue);
                 }
-                else if (way.surfaceType == Way.SurfaceType.Unpaved)
+                else if ((way.surfaceType & Way.WayType.DirtWay) != 0)
                 {
                     drawPath(way.nodes, 2, Colors.Tomato);
                 }
-                else if (way.surfaceType == Way.SurfaceType.Footway)
+                else if ((way.surfaceType & Way.WayType.PedestrianWay) != 0)
                 {
                     drawPath(way.nodes, 2, Colors.LightPink);
                 }
@@ -133,26 +133,26 @@ namespace BicycleRouter
                 Path.Visibility = Visibility.Visible;
                 Path.Points.Clear();
 
-                Way.SurfaceType surfaceType = Way.SurfaceType.None;
-                if (AnySurface.IsChecked == true)
+                Way.WayType surfaceType = Way.WayType.None;
+                if (UnspecifiedWay.IsChecked == true)
                 {
-                    surfaceType |= Way.SurfaceType.Unspecified;
+                    surfaceType |= Way.WayType.Unspecified;
                 }
-                if (UnpavedSurface.IsChecked == true)
+                if (DirtWay.IsChecked == true)
                 {
-                    surfaceType |= Way.SurfaceType.Unpaved;
+                    surfaceType |= Way.WayType.DirtWay;
                 }
-                if (AsphaltSurface.IsChecked == true)
+                if (CarWay.IsChecked == true)
                 {
-                    surfaceType |= Way.SurfaceType.Asphalt;
+                    surfaceType |= Way.WayType.CarWay;
                 }
-                if (PedestrianSurface.IsChecked == true)
+                if (PedestrianWay.IsChecked == true)
                 {
-                    surfaceType |= Way.SurfaceType.Footway;
+                    surfaceType |= Way.WayType.PedestrianWay;
                 }
-                if (CyclewaySurface.IsChecked == true)
+                if (BicycleWay.IsChecked == true)
                 {
-                    surfaceType |= Way.SurfaceType.Cycleway;
+                    surfaceType |= Way.WayType.BicycleWay;
                 }
 
                 try
@@ -217,27 +217,27 @@ namespace BicycleRouter
             Path.Visibility = Visibility.Hidden;
         }
 
-        private void AnySurface_Click(object sender, RoutedEventArgs e)
+        private void UnspecifiedWay_Click(object sender, RoutedEventArgs e)
         {
             findPath();
         }
 
-        private void AsphaltSurface_Click(object sender, RoutedEventArgs e)
+        private void CarWay_Click(object sender, RoutedEventArgs e)
         {
             findPath();
         }
 
-        private void CyclewaySurface_Click(object sender, RoutedEventArgs e)
+        private void BicycleWay_Click(object sender, RoutedEventArgs e)
         {
             findPath();
         }
 
-        private void UnpavedSurface_Click(object sender, RoutedEventArgs e)
+        private void DirtWay_Click(object sender, RoutedEventArgs e)
         {
             findPath();
         }
 
-        private void PedestrianSurface_Click(object sender, RoutedEventArgs e)
+        private void PedestrianWay_Click(object sender, RoutedEventArgs e)
         {
             findPath();
         }

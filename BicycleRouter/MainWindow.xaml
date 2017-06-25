@@ -43,19 +43,19 @@
                         </Style.Triggers>
                     </Style>
                 </StackPanel.Style>
-                <ToggleButton Padding="5" Name="AnySurface" Click="AnySurface_Click" IsChecked="True">
-                    Неуказанный тип дороги
+                <ToggleButton Padding="5" Name="UnspecifiedWay" Click="UnspecifiedWay_Click" IsChecked="True">
+                    Неуказанный тип дорог
                 </ToggleButton>
-                <ToggleButton Padding="5" Name="PedestrianSurface" Click="PedestrianSurface_Click" IsChecked="True">
+                <ToggleButton Padding="5" Name="PedestrianWay" Click="PedestrianWay_Click" IsChecked="True">
                     Пешеходные дороги
                 </ToggleButton>
-                <ToggleButton Padding="5" Name="UnpavedSurface" Click="UnpavedSurface_Click" IsChecked="True">
+                <ToggleButton Padding="5" Name="DirtWay" Click="DirtWay_Click" IsChecked="True">
                     Грунтовые дороги
                 </ToggleButton>
-                <ToggleButton Padding="5" Name="AsphaltSurface" Click="AsphaltSurface_Click" IsChecked="True">
+                <ToggleButton Padding="5" Name="CarWay" Click="CarWay_Click" IsChecked="True">
                     Асфальтовые дороги
                 </ToggleButton>
-                <ToggleButton Padding="5" Name="CyclewaySurface" Click="CyclewaySurface_Click" IsChecked="True">
+                <ToggleButton Padding="5" Name="BicycleWay" Click="BicycleWay_Click" IsChecked="True">
                     Велодорожки
                 </ToggleButton>
             </StackPanel>
